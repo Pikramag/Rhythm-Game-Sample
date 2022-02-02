@@ -13,7 +13,7 @@ public class SpawnerScanner : MonoBehaviour
     void Update()
     {
         if(!isSet){
-            SongManager.instance.AddSpawnListener(this.gameObject);
+            SongManager.instance.AddSpawnListener(this);
             ScrSpd = SongManager.instance.scrollSpeed;
             if(transform.parent.gameObject.name == "EnemySpawners"){
                 isEnemy = true;
