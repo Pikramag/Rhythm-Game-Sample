@@ -48,8 +48,7 @@ public class SpawnerScanner : MonoBehaviour
                 script.RealBeat = bpmSongTime;
                 script.SetBeat = SongManager.instance.SN[noteIndex].time;
             }
-
-            if(SongManager.instance.SN[noteIndex].isEnemy != isEnemy && SongManager.instance.SN[noteIndex].isPlayer == true)
+            else if(SongManager.instance.SN[noteIndex].isPlayer == true)
             {
                 GameObject spawned = Instantiate(notePrefab, transform.position, Quaternion.identity);
                 NoteController script = spawned.GetComponent<NoteController>();
