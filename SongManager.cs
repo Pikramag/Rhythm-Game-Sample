@@ -78,11 +78,11 @@ public class SongManager : MonoBehaviour
         }
     }
 
-    public void AddSpawnListener(GameObject ObjectToAdd)
+    public void AddSpawnListener(SpawnerScanner scriptToAdd)
     {
-        //Very Dangerous if the ObjectToAdd does not have the 
+        //Very Dangerous if the scriptToAdd does not have the 
         //SpawnNote method you will get an exception
-        m_SpawnNote.AddListener(ObjectToAdd.GetComponent<SpawnerScanner>().SpawnNote);
+        m_SpawnNote.AddListener(scriptToAdd.SpawnNote);
     }
 }
 
