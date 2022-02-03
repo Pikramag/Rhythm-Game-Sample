@@ -13,7 +13,7 @@ public class SpawnerScanner : MonoBehaviour
     void Update()
     {
         if(!isSet){
-            SongManager.instance.AddSpawnListener(this.gameObject);
+            //SongManager.instance.AddSpawnListener(this.gameObject);
             ScrSpd = SongManager.instance.scrollSpeed;
             if(transform.parent.gameObject.name == "EnemySpawners"){
                 isEnemy = true;
@@ -35,30 +35,8 @@ public class SpawnerScanner : MonoBehaviour
         }
     }
 
-    public void SpawnNote()
-    {
-        if(SongManager.instance.SN[noteIndex].ArrID == arrIndex) // && bpmSongTime > SongManager.instance.SN[noteIndex].time - (4f / ScrSpd)
-        {
-            if(SongManager.instance.SN[noteIndex].isEnemy == isEnemy){
-                GameObject spawned = Instantiate(notePrefab, transform.position, Quaternion.identity);
-                NoteController script = spawned.GetComponent<NoteController>();
-                script.Spawner = gameObject;
-                script.Remover = GameObject.Find("EnemyArrowsHolder").transform.GetChild(arrIndex).gameObject;
-                script.sr.sprite = noteSprite;
-                script.RealBeat = bpmSongTime;
-                script.SetBeat = SongManager.instance.SN[noteIndex].time;
-            }
-
-            if(SongManager.instance.SN[noteIndex].isEnemy != isEnemy && SongManager.instance.SN[noteIndex].isPlayer == true)
-            {
-                GameObject spawned = Instantiate(notePrefab, transform.position, Quaternion.identity);
-                NoteController script = spawned.GetComponent<NoteController>();
-                script.Spawner = gameObject;
-                script.Remover = GameObject.Find("ArrowsHolder").transform.GetChild(arrIndex).gameObject;
-                script.sr.sprite = noteSprite;
-                script.RealBeat = bpmSongTime;
-                script.SetBeat = SongManager.instance.SN[noteIndex].time;
-            }
-        }
-    }
+    //public void SpawnNote()
+    //{
+        
+    //}
 }

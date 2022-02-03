@@ -23,11 +23,11 @@ public class SongManager : MonoBehaviour
     public bool isDownScroll;
     public int Score;
     public int Combo;
-    UnityEvent m_SpawnNote;
+    //UnityEvent m_SpawnNote;
     
     void Start()
     {
-        m_SpawnNote = new UnityEvent();
+        //m_SpawnNote = new UnityEvent();
         instance = this;
         MusicPlayer = GameObject.Find("MusicHolder").GetComponent<AudioSource>();
         VoicesPlayer = GameObject.Find("VoiceHolder").GetComponent<AudioSource>();
@@ -71,25 +71,54 @@ public class SongManager : MonoBehaviour
         songPosition = (float) (AudioSettings.dspTime - dspTimeSong);
         songPositionInBeats = songPosition / secPerBeat;
 
-        for(int i = nextIndex; i < SN.Count && songPositionInBeats > SN[i].time - (4f / scrollSpeed); i++)
+        for(int i = 0; i < SN.Count && songPositionInBeats > SN[i].time - (4f / scrollSpeed); i++)
         {
-            m_SpawnNote.Invoke();
+            Debug.Log(SN[nextIndex].ArrID.Length > 0);
+            if(SN[i].ArrID.Length > 0) // && bpmSongTime > SongManager.instance.SN[noteIndex].time - (4f / ScrSpd)
+            {
+                int Len = SN[nextIndex].ArrID.Length;
+                int FirstNum = (int)System.Char.GetNumericValue(SN[nextIndex].ArrID[0]);
+                for(int j = FirstNum; j < Len; j++){
+                    Debug.Log(j);
+                    if(SN[nextIndex].isEnemy){
+                        GameObject spawned = Instantiate(prefab, transform.position, Quaternion.identity);
+                        NoteController script = spawned.GetComponent<NoteController>();
+                        script.Spawner = EnSpawner.transform.GetChild(j).gameObject;
+                        script.Remover = EnRemover.transform.GetChild(j).gameObject;
+                        script.sr.sprite = Notes7K[j];
+                        script.RealBeat = songPositionInBeats;
+                        script.SetBeat = SN[nextIndex].time;
+                    }
+
+                    if(!SN[nextIndex].isEnemy && SN[nextIndex].isPlayer)
+                    {
+                        GameObject spawned = Instantiate(prefab, transform.position, Quaternion.identity);
+                        NoteController script = spawned.GetComponent<NoteController>();
+                        script.Spawner = PlSpawner.transform.GetChild(j).gameObject;
+                        script.Remover = PlRemover.transform.GetChild(j).gameObject;
+                        script.sr.sprite = Notes7K[j];
+                        script.RealBeat = songPositionInBeats;
+                        script.SetBeat = SN[nextIndex].time;
+                    }
+                }
+            }
+            //m_SpawnNote.Invoke();
             nextIndex++;
         }
     }
 
-    public void AddSpawnListener(GameObject ObjectToAdd)
-    {
+    //public void AddSpawnListener(GameObject ObjectToAdd)
+    //{
         //Very Dangerous if the ObjectToAdd does not have the 
         //SpawnNote method you will get an exception
-        m_SpawnNote.AddListener(ObjectToAdd.GetComponent<SpawnerScanner>().SpawnNote);
-    }
+        //m_SpawnNote.AddListener(ObjectToAdd.GetComponent<SpawnerScanner>().SpawnNote);
+    //}
 }
 
 [System.Serializable]
 public class Note
 {
     public bool isEnemy, isPlayer;
-    public int ArrID;
+    public string ArrID;
     public float time;
 }
