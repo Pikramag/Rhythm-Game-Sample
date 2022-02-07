@@ -4,66 +4,52 @@ using UnityEngine;
 
 public class SongManager : MonoBehaviour
 {
+    GameObject PlayerArrows, EnemyArrows;
     public string[] KeyCode7K = new string[7]{"s","d","f","space","j","k","l"};
     public Sprite[] Notes7K;
     public bool is7K = true;
     public static SongManager instance;
-    public float scrollSpeed;
+    public float scrollSpeed, bpm, songPositionInBeats;
     public GameObject prefab;
-    GameObject EnSpawner, PlSpawner, PlRemover, EnRemover;
     AudioSource MusicPlayer;
     AudioSource VoicesPlayer;
-    public float bpm;
     float songPosition;
-    public float songPositionInBeats;
     public float secPerBeat;
     float dspTimeSong;
     public List<Note> SN = new List<Note>();
-    public int nextIndex;
     public bool isDownScroll;
     public int Score;
     public int Combo;
-    UnityEvent m_SpawnNote;
+    float preloadTime;
     
     void Start()
     {
-        m_SpawnNote = new UnityEvent();
+        EnemyArrows = GameObject.Find("EnemyArrowsHolder");
+        PlayerArrows = GameObject.Find("ArrowsHolder");
+        if(isDownScroll){
+            EnemyArrows.transform.position = new Vector2(EnemyArrows.transform.position.x, -3.5f);
+            PlayerArrows.transform.position = new Vector2(PlayerArrows.transform.position.x, -3.5f);
+        } else {
+            EnemyArrows.transform.position = new Vector2(EnemyArrows.transform.position.x, 3.5f);
+            PlayerArrows.transform.position = new Vector2(PlayerArrows.transform.position.x, 3.5f);
+        }
+
+        for(int obj = 0; obj < 7; obj++){
+            PlayerArrows.transform.GetChild(obj).GetComponent<ArrowController>().keycode = KeyCode7K[obj];
+        }
+
         instance = this;
         MusicPlayer = GameObject.Find("MusicHolder").GetComponent<AudioSource>();
         VoicesPlayer = GameObject.Find("VoiceHolder").GetComponent<AudioSource>();
         secPerBeat = 60f / bpm;
         dspTimeSong = (float)AudioSettings.dspTime;
-        EnSpawner = GameObject.Find("EnemySpawners");
-        PlSpawner = GameObject.Find("PlayerSpawners");
-        PlRemover = GameObject.Find("ArrowsHolder");
-        EnRemover = GameObject.Find("EnemyArrowsHolder");
         MusicPlayer.Play();
         VoicesPlayer.Play();
-        Vector2 EnSpawnPos = EnSpawner.transform.position;
-        Vector2 PlRemPos = PlRemover.transform.position;
-        Vector2 PlSpawnPos = PlSpawner.transform.position;
-        Vector2 EnRemPos = EnRemover.transform.position;
-        if(isDownScroll){
-            PlRemover.transform.position = new Vector2(PlRemPos.x, -3.5f);
-            EnRemover.transform.position = new Vector2(EnRemPos.x, -3.5f);
-            EnSpawner.transform.position = new Vector2(EnSpawnPos.x, EnRemPos.y + Vector2.Distance(EnSpawnPos, EnRemPos));
-            PlSpawner.transform.position = new Vector2(PlSpawnPos.x, PlRemPos.y + Vector2.Distance(PlSpawnPos, PlRemPos));
-        } else {
-            PlRemover.transform.position = new Vector2(PlRemPos.x, 3.5f);
-            EnRemover.transform.position = new Vector2(EnRemPos.x, 3.5f);
-            EnSpawner.transform.position = new Vector2(EnSpawnPos.x, EnRemPos.y - Vector2.Distance(EnSpawnPos, EnRemPos));
-            PlSpawner.transform.position = new Vector2(PlSpawnPos.x, PlRemPos.y - Vector2.Distance(PlSpawnPos, PlRemPos));
-        }
-
-        if(is7K){
-            for(int arr = 0; arr < 7; arr++){
-                PlRemover.transform.GetChild(arr).transform.GetComponent<ArrowController>().keycode = KeyCode7K[arr];
-            }
-        } else {
-
-        }
         GameObject opt = Instantiate(prefab, new Vector2(0f, -6f), Quaternion.identity);
         opt.GetComponent<NoteController>().enabled = false;
+
+        SongLoader.instance.CreateTextFile();
+        SongLoader.instance.WriteChart();
     }
 
     void Update()
@@ -71,18 +57,58 @@ public class SongManager : MonoBehaviour
         songPosition = (float) (AudioSettings.dspTime - dspTimeSong);
         songPositionInBeats = songPosition / secPerBeat;
 
-        for(int i = nextIndex; i < SN.Count && songPositionInBeats > SN[i].time - (4f / scrollSpeed); i++)
-        {
-            m_SpawnNote.Invoke();
-            nextIndex++;
+        if(songPositionInBeats > preloadTime - 4f){
+            preloadTime += 16f;
+            PreloadNotes(preloadTime);
         }
     }
 
-    public void AddSpawnListener(GameObject ObjectToAdd)
-    {
-        //Very Dangerous if the ObjectToAdd does not have the 
-        //SpawnNote method you will get an exception
-        m_SpawnNote.AddListener(ObjectToAdd.GetComponent<SpawnerScanner>().SpawnNote);
+    void PreloadNotes(float preTime){
+        for(int i = 0; i < SN.Count && SN[i].time < preTime; i++){
+            NoteController script = prefab.GetComponent<NoteController>();
+            script.sr.sprite = Notes7K[SN[i].ArrID];
+            script.SetBeat = SN[i].time;
+            script.RealBeat = SN[i].time - (4f / scrollSpeed);
+            if(is7K){
+                script.is7K = true;
+            } else {
+                script.is7K = false;
+            }
+            Vector2 Pos_Start;
+            if(SN[i].isEnemy){
+                if(isDownScroll){
+                    Pos_Start = new Vector2(
+                        EnemyArrows.transform.GetChild(SN[i].ArrID).transform.position.x,
+                        EnemyArrows.transform.GetChild(SN[i].ArrID).transform.position.y + 9.5f);
+                } else {
+                    Pos_Start = new Vector2(
+                        EnemyArrows.transform.GetChild(SN[i].ArrID).transform.position.x,
+                        EnemyArrows.transform.GetChild(SN[i].ArrID).transform.position.y - 9.5f);
+                }
+                script.StartPos = Pos_Start;
+                script.EndPos = new Vector2(
+                    EnemyArrows.transform.GetChild(SN[i].ArrID).transform.position.x,
+                    EnemyArrows.transform.GetChild(SN[i].ArrID).transform.position.y);
+                Instantiate(prefab, Pos_Start, Quaternion.identity);
+            }
+
+            if(SN[i].isPlayer){
+                if(isDownScroll){
+                    Pos_Start = new Vector2(
+                        PlayerArrows.transform.GetChild(SN[i].ArrID).transform.position.x,
+                        PlayerArrows.transform.GetChild(SN[i].ArrID).transform.position.y + 9.5f);
+                } else {
+                    Pos_Start = new Vector2(
+                        PlayerArrows.transform.GetChild(SN[i].ArrID).transform.position.x,
+                        PlayerArrows.transform.GetChild(SN[i].ArrID).transform.position.y - 9.5f);
+                }
+                script.StartPos = Pos_Start;
+                script.EndPos = new Vector2(
+                    PlayerArrows.transform.GetChild(SN[i].ArrID).transform.position.x,
+                    PlayerArrows.transform.GetChild(SN[i].ArrID).transform.position.y);
+                Instantiate(prefab, Pos_Start, Quaternion.identity);
+            }
+        }
     }
 }
 
